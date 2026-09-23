@@ -9,6 +9,14 @@ import (
 	"sync"
 )
 
+type Priority int
+
+const (
+	defaultPriority Priority = iota + 1
+	special
+	biggestPriority
+)
+
 type CurrentWeather struct {
 	Temperature float64 `json:"temperature"`
 	WindSpeed   float64 `json:"windspeed"`
@@ -19,7 +27,7 @@ type WeatherResponse struct {
 	Latitude       float64        `json:"latitude"`
 	Longitude      float64        `json:"longitude"`
 	CurrentWeather CurrentWeather `json:"current_weather"`
-	CustomPriority *int           `json:"custom_priority,omitempty"`
+	CustomPriority *Priority      `json:"custom_priority,omitempty"`
 }
 
 type WeatherRepository struct {
@@ -64,8 +72,7 @@ func (r *WeatherRepository) FetchWeather(lat, lon, apiToken string) (*WeatherRes
 		return nil, err
 	}
 
-	defaultPriority := 1
-	weather.CustomPriority = &defaultPriority
+	weather.CustomPriority = new(Priority(defaultPriority))
 
 	r.mu.Lock()
 	r.cache[cacheKey] = &weather
