@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil" // Legacy package: target for `go fix`
+	"io/ioutil"
 	"net/http"
 	"sync"
 )
@@ -25,7 +25,6 @@ type WeatherResponse struct {
 type WeatherRepository struct {
 	mu sync.RWMutex
 
-	// Strong pointer map: Prevents GC reclamation (target for weak.Pointer)
 	cache map[string]*WeatherResponse
 }
 
@@ -45,7 +44,6 @@ func (r *WeatherRepository) FetchWeather(lat, lon, apiToken string) (*WeatherRes
 	}
 	r.mu.RUnlock()
 
-	// Sensitive key computation: Target for runtime/secret zeroing
 	authHash := sha256.Sum256([]byte(apiToken + ":secret-salt"))
 	_ = authHash
 
@@ -56,19 +54,16 @@ func (r *WeatherRepository) FetchWeather(lat, lon, apiToken string) (*WeatherRes
 	}
 	defer resp.Body.Close()
 
-	// Legacy I/O read: Target for go fix modernization
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	// Standard v1 JSON unmarshaling: Target for encoding/json/v2
 	var weather WeatherResponse
 	if err := json.Unmarshal(body, &weather); err != nil {
 		return nil, err
 	}
 
-	// Temporary variable pointer initialization: Target for new(expr)
 	defaultPriority := 1
 	weather.CustomPriority = &defaultPriority
 
@@ -79,7 +74,6 @@ func (r *WeatherRepository) FetchWeather(lat, lon, apiToken string) (*WeatherRes
 	return &weather, nil
 }
 
-// Slice allocation: Target for iter.Seq iterators
 func (r *WeatherRepository) GetAllCached() []WeatherResponse {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

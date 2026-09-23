@@ -30,12 +30,6 @@ func (c *WeatherController) GetWeather(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Unbuffered channel write without reader: Intentionally leaks goroutine
-	leakChan := make(chan bool)
-	go func() {
-		leakChan <- true // Blocks forever (target for goroutineleak profile)
-	}()
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
 }
@@ -49,7 +43,6 @@ func (c *WeatherController) BatchGet(w http.ResponseWriter, r *http.Request) {
 	var wg sync.WaitGroup
 	results := make(chan *repository.WeatherResponse, len(cities))
 
-	// Manual WaitGroup increment and defer: Target for sync.WaitGroup.Go()
 	for _, city := range cities {
 		coords := strings.Split(city, ":")
 		if len(coords) != 2 {
