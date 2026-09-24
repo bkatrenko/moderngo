@@ -1,1 +1,0 @@
-1. Add mockery to the tools with go get -tool github.com/vektra/mockery/v2@latest
