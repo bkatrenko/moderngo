@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"crypto/sha256"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,6 +28,7 @@ type WeatherResponse struct {
 	Longitude      float64        `json:"longitude"`
 	CurrentWeather CurrentWeather `json:"current_weather"`
 	CustomPriority *Priority      `json:"custom_priority,omitempty"`
+	ErrorMessage   string         `json:"error_message,omitempty"`
 }
 
 type WeatherRepository struct {
@@ -42,7 +43,7 @@ func NewWeatherRepository() *WeatherRepository {
 	}
 }
 
-func (r *WeatherRepository) FetchWeather(lat, lon, apiToken string) (*WeatherResponse, error) {
+func (r *WeatherRepository) FetchWeather(ctx context.Context, lat, lon string) (*WeatherResponse, error) {
 	cacheKey := fmt.Sprintf("%s:%s", lat, lon)
 
 	r.mu.RLock()
@@ -52,11 +53,14 @@ func (r *WeatherRepository) FetchWeather(lat, lon, apiToken string) (*WeatherRes
 	}
 	r.mu.RUnlock()
 
-	authHash := sha256.Sum256([]byte(apiToken + ":secret-salt"))
-	_ = authHash
-
 	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current_weather=true", lat, lon)
-	resp, err := http.Get(url)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
