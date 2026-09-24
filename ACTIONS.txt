@@ -1,3 +1,27 @@
-1. Add mockery to the tools with `go get -tool github.com/vektra/mockery/v2@v2.53.7`
-2. Create repository mock with `go tool mockery --all --with-expecter`
-3. Do `go get github.com/stretchr/testify/mock`
+1. Add "runtime/trace" to the main function imports
+2. Initiate recorder with 
+```
+    fr := trace.NewFlightRecorder(trace.FlightRecorderConfig{})
+	if err := fr.Start(); err != nil {
+		log.Fatalf("failed to start flight recorder: %v", err)
+	}
+	defer fr.Stop()
+```
+3. Add flight recorder endpoint
+```
+	http.HandleFunc("/debug/flightrecorder", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", `attachment; filename="trace.out"`)
+
+		// WriteTo dumps the in-memory circular buffer to the response writer
+		// Note: Only one goroutine can call WriteTo at a time. Concurrent calls return an error.
+		if _, err := fr.WriteTo(w); err != nil {
+			log.Printf("Flight recorder failed to write trace: %v", err)
+		}
+	})
+```
+
+4. curl -o trace.out http://localhost:8080/debug/flightrecorder
+5. go tool trace trace.out
+8. Make a memory leak in the application (any way)
+9. Check memory graph again
