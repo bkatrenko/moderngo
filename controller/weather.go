@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"moderngo/repository"
 	"net/http"
@@ -11,19 +12,26 @@ import (
 	"time"
 )
 
+const (
+	defaultTimeout = time.Second * 20
+)
+
 type WeatherRepository interface {
 	FetchWeather(ctx context.Context, lat, lon string) (*repository.WeatherResponse, error)
 }
 
 type WeatherController struct {
-	repo *repository.WeatherRepository
+	repo WeatherRepository
 }
 
-func NewWeatherController(repo *repository.WeatherRepository) *WeatherController {
+func NewWeatherController(repo WeatherRepository) *WeatherController {
 	return &WeatherController{repo: repo}
 }
 
 func (c *WeatherController) GetWeather(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), defaultTimeout)
+	defer cancel()
+
 	lat := r.URL.Query().Get("lat")
 	lon := r.URL.Query().Get("lon")
 
@@ -31,9 +39,16 @@ func (c *WeatherController) GetWeather(w http.ResponseWriter, r *http.Request) {
 		lat, lon = "52.52", "13.41" // Default to Berlin
 	}
 
-	data, err := c.repo.FetchWeather(r.Context(), lat, lon)
+	data, err := c.repo.FetchWeather(ctx, lat, lon)
 	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			http.Error(w, "timeout", http.StatusRequestTimeout)
+
+			return
+		}
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -42,7 +57,7 @@ func (c *WeatherController) GetWeather(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *WeatherController) BatchGet(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), time.Second*20)
+	ctx, cancel := context.WithTimeout(r.Context(), defaultTimeout)
 	defer cancel()
 
 	cities := strings.Split(r.URL.Query().Get("cities"), ",")
@@ -74,6 +89,13 @@ func (c *WeatherController) getCitiesWeatherInBatch(ctx context.Context, cities 
 		wg.Go(func() {
 			data, err := c.repo.FetchWeather(ctx, coords[0], coords[1])
 			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) {
+					data = &repository.WeatherResponse{ErrorMessage: "timeout"}
+					results <- data
+
+					return
+				}
+
 				log.Printf("error: %s\n", err)
 				if data == nil {
 					data = &repository.WeatherResponse{ErrorMessage: "unexpected error"}

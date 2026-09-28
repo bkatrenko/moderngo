@@ -1,3 +1,5 @@
 1. Add mockery to the tools with `go get -tool github.com/vektra/mockery/v2@v2.53.7`
 2. Create repository mock with `go tool mockery --all --with-expecter`
 3. Do `go get github.com/stretchr/testify/mock`
+4. Add timeouts to the endpoints if not added
+5. Test timeouts in `getCitiesWeatherInBatch` with synctest
