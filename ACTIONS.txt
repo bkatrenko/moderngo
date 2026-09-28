@@ -1,5 +1,2 @@
-1. Change import to "encoding/json/v2"
-2. Try 	json.MarshalWrite(w io.Writer, val any)
-		json.UnmarshalRead(r io.Reader, val any)
-3. Try "omitempty" "omitzero"
-4. Try few benchmarks
+1. Check GetAllCached() function in the repository
+2. Rewrite it using iterators
