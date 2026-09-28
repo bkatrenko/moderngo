@@ -13,10 +13,8 @@
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("Content-Disposition", `attachment; filename="trace.out"`)
 
-		// WriteTo dumps the in-memory circular buffer to the response writer
-		// Note: Only one goroutine can call WriteTo at a time. Concurrent calls return an error.
 		if _, err := fr.WriteTo(w); err != nil {
-			log.Printf("Flight recorder failed to write trace: %v", err)
+			log.Printf("flight recorder failed to write trace: %v", err)
 		}
 	})
 ```
