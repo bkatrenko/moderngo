@@ -13,5 +13,5 @@ func TestNew(t *testing.T) {
 	// v5 := new(testing.InternalExample{Name: "test"})
 	// v6 := new(new(new(int(42))))
 
-	//t.Fail()
+	// t.Fail()
 }
