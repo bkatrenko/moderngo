@@ -1,5 +1,5 @@
-1. Add `_ "net/http/pprof"` to the main function imports
-2. Call `curl http://localhost:8080/debug/pprof/goroutineleak > leak.prof`
-3. Use `go tool pprof leak.prof`
-4. Add leaked goroutine
-5. Get the profiler data again and check `list GetWeather.func1` in the pprof tool
+1. Change import to "encoding/json/v2"
+2. Try 	json.MarshalWrite(w io.Writer, val any)
+		json.UnmarshalRead(r io.Reader, val any)
+3. Try "omitempty" "omitzero"
+4. Try few benchmarks
